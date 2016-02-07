@@ -27,14 +27,16 @@
 
 ## Reference
 
+네이버 API, 구글 API의 위치 정확도가 주소에 따라 달라서 네이버 API를 default로, 네이버 API의 결과가 없는 경우 구글 API를 사용함
+
+* [네이버 지도 API](http://developer.naver.com/wiki/pages/JavaScript#section-JavaScript-9._EC_A3_BC_EC_86_8C_EC_A2_8C_ED_91_9C_EB_B3_80_ED_99_98)  
+주소에 해당하는 위경도 좌표를 구함
 * [Google Maps Geocoding API](https://developers.google.com/maps/documentation/geocoding/intro)  
 도로명주소, 지번주소에 해당하는 위경도 좌표를 구함 
 * [네이버 검색 API](http://developer.naver.com/wiki/pages/SrchLocal)  
 상호, 점포명에 해당하는 네이버 지도검색 결과를 카텍 좌표계로 구함 
 * [다음 로컬 API - 좌표계변환](http://developers.daum.net/services/apis/local/geo/transcoord)  
 카텍 좌표계를 위/경도 좌표계로 변환 
-* [네이버 지도 API](http://developer.naver.com/wiki/pages/JavaScript#section-JavaScript-9._EC_A3_BC_EC_86_8C_EC_A2_8C_ED_91_9C_EB_B3_80_ED_99_98)  
-주소에 해당하는 위경도 좌표를 구함. 본 모듈에서는 사용하지 않음
 * RgoogleMap
 ```
 > library(RgoogleMaps)
