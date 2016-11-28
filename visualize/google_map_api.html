@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <title>Circles</title>
+    <style>
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      #map {
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+
+<script src='shopdata/location.js'></script>
+<script>
+
+function draw_circles(map, data, color, opc, r) {
+  for (var shop in data) {
+    // Add the circle for this city to the map.
+    var shopCircle = new google.maps.Circle({
+      strokeColor: color,
+      strokeOpacity: opc,
+      strokeWeight: 1,
+      fillColor: color,
+      fillOpacity: opc,
+      map: map,
+      center: data[shop].center,
+      radius: r
+    });
+    addMarker(data[shop].center, map, data[shop].label)
+  }
+};
+
+function addMarker(location, map, str) {
+  // Add the marker at the clicked location, and add the next-available label
+  // from the array of alphabetical characters.
+  var marker = new google.maps.Marker({
+    position: location,
+    label: str,
+    map: map
+    });
+  marker.addListener('click', function() {new google.maps.InfoWindow({ content: str}).open(map, marker)});
+};
+
+
+function initMap() {
+  // Create the map.
+  var map = new google.maps.Map(document.getElementById('map'), {
+    zoom: 17,
+    center: {lat: 37.5620923, lng: 126.9810679}  });
+
+  // Construct the circle for each value in citymap.
+  // Note: We scale the area of the circle based on the population.
+  draw_circles(map, starbucks, '#AA0000', 0.1, 50);
+  draw_circles(map, starbucks_primary, '#0000BB', 0.5, 100);
+
+  //draw_circles(map, starbucks, '#22AA22', 0.35, 100);
+  //draw_circles(map, withme, '#3355AA', 0.35, 100);
+  //draw_circles(map, everyday, '#AA0000', 0.35, 100);
+}
+
+    </script>
+    <script async defer
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAeESvjgjECcl1f_K0aXgAi8I5STm_OEGM&signed_in=true&callback=initMap"></script>
+  </body>
+</html>
+
