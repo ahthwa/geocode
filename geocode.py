@@ -1,56 +1,99 @@
 #!/usr/bin/python
-#-*- coding:utf-8 -*-
 
-import urllib
+import os
+import sys
+import urllib.request
 import json
-import xml.etree.ElementTree as ET
 
-naver_geocode_key = ''
-naver_searchapi_key = ''
-daum_key = ''
+#client_id = "YOUR_CLIENT_ID"
+#client_secret = "YOUR_CLIENT_SECRET"
+naver_client_id = 'BznHFaLzhxwNQxjOX22m'
+naver_client_secret = 'pVvR5ZG_yl'
 
-def geocode(addr):
-    return naver_geocode(addr)
+def _request(url, ext_header, resp_success_callback):
+    request = urllib.request.Request(url)
+    request.add_header("X-Naver-Client-Id",naver_client_id)
+    request.add_header("X-Naver-Client-Secret",naver_client_secret)
+    response = urllib.request.urlopen(request)
+    rescode = response.getcode()
+    if (rescode == 200):
+        response_body = response.read().decode('utf-8')
+        return resp_success_callback(response_body)
+    else:
+        return None
 
 def naver_geocode(addr):
     """
+    result: (lat, lng)
     >>> naver_geocode("서울특별시 중구 퇴계로 100")
-    {u'lat': 37.5602997, u'lng': 126.9829401}
+    (37.5602997, 126.9829401)
     >>> naver_geocode("서울특별시 중구 퇴계로 101")
-    {u'lat': 37.5608791, u'lng': 126.9830887}
+    (37.5608791, 126.9830887)
     >>> naver_geocode("서울특별시 중구 퇴계로 101, 건물전체")
-    {u'lat': 37.5608791, u'lng': 126.9830887}
+    (37.5608791, 126.9830887)
     """
-    url = 'http://openapi.map.naver.com/api/geocode?key=%s&encoding=utf-8&coord=latlng&output=json&query=%s'
 
-    resp = urllib.urlopen(url %(naver_geocode_key, addr)).read()
-    results = []
-
-    def _decode_dict(a_dict):
-        try: results.append(a_dict["point"])
+    encText = urllib.parse.quote(addr)
+    url = "https://openapi.naver.com/v1/map/geocode?query=" + encText # json 결과
+# url = "https://openapi.naver.com/v1/map/geocode.xml?query=" + encText # xml 결과
+    request = urllib.request.Request(url)
+    request.add_header("X-Naver-Client-Id",naver_client_id)
+    request.add_header("X-Naver-Client-Secret",naver_client_secret)
+    response = urllib.request.urlopen(request)
+    rescode = response.getcode()
+    coord = []
+    def _decode_point(a_dict):
+        try: coord.append((a_dict['y'], a_dict['x']))
         except KeyError: pass
         return a_dict
 
-    json.loads(resp, object_hook = _decode_dict)
-    lat = ''
-    lng = ''
-    if (len(results) >= 1):
-        lat = results[0]['y']
-        lng = results[0]['x']
-    return {u"lat":lat, u"lng":lng}
+    if(rescode==200):
+        response_body = response.read().decode('utf-8')
+        json.loads(response_body, object_hook = _decode_point)
+        return coord[0]
+    else:
+        return rescode
+
+def naver_geo_search(query):
+    """
+    >>> naver_geo_search("스타벅스 남산스테이트점")
+    (37.5602997, 126.9829401)
+    """
+    encText = urllib.parse.quote(query)
+    url = "https://openapi.naver.com/v1/search/local.json?query=" + encText # json 결과
+# url = "https://openapi.naver.com/v1/search/local.xml?query=" + encText # xml 결과
+    request = urllib.request.Request(url)
+    request.add_header("X-Naver-Client-Id",naver_client_id)
+    request.add_header("X-Naver-Client-Secret",naver_client_secret)
+    response = urllib.request.urlopen(request)
+    rescode = response.getcode()
+
+    roadAddr = []
+    def _decode_roadAddr(a_dict):
+        try: roadAddr.append(a_dict['roadAddress'])
+        except KeyError: pass
+        return a_dict
+
+    if(rescode==200):
+        response_body = response.read().decode('utf-8')
+        json.loads(response_body, object_hook = _decode_roadAddr)
+        return naver_geocode(roadAddr[0])
+    else:
+        return rescode
 
 def google_geocode(addr):
     """
     >>> google_geocode("서울특별시 중구 퇴계로 100")
-    {u'lat': 37.5602013, u'lng': 126.9829327}
+    (37.5602013, 126.9829327)
     >>> google_geocode("서울특별시 중구 퇴계로 101")
-    {u'lat': 37.5608244, u'lng': 126.9830929}
-    >>> google_geocode("경기도 동두천시 싸리말로 미2사단 캠프케이시 PX Mall")
-    {u'lat': 37.9179091, u'lng': 127.0642171}
+    (37.5608244, 126.9830929)
     """
 
     url = "http://maps.googleapis.com/maps/api/geocode/json?sensor=false&language=ko&address=%s"
-    resp = urllib.urlopen(url %(addr)).read()
+    encText = urllib.parse.quote(addr)
+    request = urllib.request.Request(url %(encText))
+    response = urllib.request.urlopen(request)
+    rescode = response.getcode()
 
     results = []
 
@@ -59,54 +102,15 @@ def google_geocode(addr):
         except KeyError: pass
         return a_dict
 
-    json.loads(resp, object_hook = _decode_dict)
-    if (len(results) < 1):
-        return {"lat":"", "lng":""}
+    if(rescode==200):
+        response_body = response.read().decode('utf-8')
+        json.loads(response_body, object_hook = _decode_dict)
+        if (len(results) < 1):
+            return None
+        else:
+            return (results[0]['lat'], results[0]['lng'])
     else:
-        return results[0]
-
-def KTMtoWGS(x, y):
-    """
-    >>> KTMtoWGS("315637", "554292")
-    {u'y': '37.587033', u'x': '127.042563'}
-    """
-    url = "http://apis.daum.net/local/geo/transcoord?apikey=%s&x=%s&y=%s&fromCoord=KTM&toCoord=WGS84&output=json"
-    result = json.loads(urllib.urlopen(url %(daum_key, x, y)).read())
-    if ('y' not in result or 'x' not in result):
-        result = {'x':'', 'y':''}
-    else:
-        result['x'] = "%f" %(result['x'])
-        result['y'] = "%f" %(result['y'])
-    return result
-
-def search(name):
-    """
-    >>> search("스타벅스 남산스테이트점")
-    {u'lat': 37.560468, u'lng': 126.983027}
-    """
-    url='http://openapi.naver.com/search?key=%s&query=%s&target=local&start=1&display=1'
-
-    f = urllib.urlopen(url %(naver_searchapi_key, urllib.quote(name)))
-    xmldata = f.read()
-
-    tree = ET.fromstring(xmldata)
-
-    channel = tree.find("channel")
-    items = channel.getiterator("item")
-
-    address = ''
-    mapx = ''
-    mapy = ''
-
-    for i in items:
-        address = i.find("address").text
-        mapx =  i.find("mapx").text
-        mapy = i.find("mapy").text
-        break
-    latlng = KTMtoWGS(mapx, mapy)
-    lat = float(latlng.get('y', 0.0))
-    lng = float(latlng.get('x', 0.0))
-    return {u"lat":lat, u"lng":lng}
+        return rescode
 
 if "__main__" == __name__:
     import doctest
