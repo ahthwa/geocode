@@ -5,22 +5,20 @@ import sys
 import urllib.request
 import json
 
-#client_id = "YOUR_CLIENT_ID"
-#client_secret = "YOUR_CLIENT_SECRET"
-naver_client_id = 'BznHFaLzhxwNQxjOX22m'
-naver_client_secret = 'pVvR5ZG_yl'
+naver_client_id = 'YOUR_CLIENT_ID'
+naver_client_secret = 'YOUR_CLIENT_SECRET'
 
-def _request(url, ext_header, resp_success_callback):
+def _request(url, ext_header = {}):
     request = urllib.request.Request(url)
-    request.add_header("X-Naver-Client-Id",naver_client_id)
-    request.add_header("X-Naver-Client-Secret",naver_client_secret)
+    for k, v in ext_header.items():
+        request.add_header(k, v)
     response = urllib.request.urlopen(request)
-    rescode = response.getcode()
-    if (rescode == 200):
-        response_body = response.read().decode('utf-8')
-        return resp_success_callback(response_body)
-    else:
-        return None
+    return response
+
+def _select_element(a_dict, element_name, element_buffer):
+    if (element_name in a_dict):
+        element_buffer.append(a_dict[element_name])
+    return a_dict
 
 def naver_geocode(addr):
     """
@@ -35,24 +33,22 @@ def naver_geocode(addr):
 
     encText = urllib.parse.quote(addr)
     url = "https://openapi.naver.com/v1/map/geocode?query=" + encText # json 결과
-# url = "https://openapi.naver.com/v1/map/geocode.xml?query=" + encText # xml 결과
-    request = urllib.request.Request(url)
-    request.add_header("X-Naver-Client-Id",naver_client_id)
-    request.add_header("X-Naver-Client-Secret",naver_client_secret)
-    response = urllib.request.urlopen(request)
+    # url = "https://openapi.naver.com/v1/map/geocode.xml?query=" + encText # xml 결과
+    response = _request(url, {"X-Naver-Client-Id":naver_client_id, "X-Naver-Client-Secret":naver_client_secret})
     rescode = response.getcode()
-    coord = []
-    def _decode_point(a_dict):
-        try: coord.append((a_dict['y'], a_dict['x']))
-        except KeyError: pass
-        return a_dict
 
+    coord = []
     if(rescode==200):
         response_body = response.read().decode('utf-8')
-        json.loads(response_body, object_hook = _decode_point)
-        return coord[0]
+        json.loads(response_body, object_hook = lambda x: _select_element(x, 'point', coord))
+        if (len(coord) < 1):
+            return None
+        return [(c['y'], c['x']) for c in coord][0]
     else:
         return rescode
+
+def naver_geodecode(lat, lng):
+    return
 
 def naver_geo_search(query):
     """
@@ -61,22 +57,16 @@ def naver_geo_search(query):
     """
     encText = urllib.parse.quote(query)
     url = "https://openapi.naver.com/v1/search/local.json?query=" + encText # json 결과
-# url = "https://openapi.naver.com/v1/search/local.xml?query=" + encText # xml 결과
-    request = urllib.request.Request(url)
-    request.add_header("X-Naver-Client-Id",naver_client_id)
-    request.add_header("X-Naver-Client-Secret",naver_client_secret)
-    response = urllib.request.urlopen(request)
+    # url = "https://openapi.naver.com/v1/search/local.xml?query=" + encText # xml 결과
+    response = _request(url, {"X-Naver-Client-Id":naver_client_id, "X-Naver-Client-Secret":naver_client_secret})
     rescode = response.getcode()
 
     roadAddr = []
-    def _decode_roadAddr(a_dict):
-        try: roadAddr.append(a_dict['roadAddress'])
-        except KeyError: pass
-        return a_dict
-
     if(rescode==200):
         response_body = response.read().decode('utf-8')
-        json.loads(response_body, object_hook = _decode_roadAddr)
+        json.loads(response_body, object_hook = lambda x: _select_element(x, 'roadAddress', roadAddr))
+        if (len(roadAddr) < 1):
+            return None
         return naver_geocode(roadAddr[0])
     else:
         return rescode
@@ -89,10 +79,10 @@ def google_geocode(addr):
     (37.5608244, 126.9830929)
     """
 
-    url = "http://maps.googleapis.com/maps/api/geocode/json?sensor=false&language=ko&address=%s"
     encText = urllib.parse.quote(addr)
-    request = urllib.request.Request(url %(encText))
-    response = urllib.request.urlopen(request)
+    url = "http://maps.googleapis.com/maps/api/geocode/json?sensor=false&language=ko&address=%s" %(encText)
+
+    response = _request(url)
     rescode = response.getcode()
 
     results = []
@@ -104,11 +94,11 @@ def google_geocode(addr):
 
     if(rescode==200):
         response_body = response.read().decode('utf-8')
-        json.loads(response_body, object_hook = _decode_dict)
+        json.loads(response_body, object_hook = lambda x: _select_element(x, 'location', results))
         if (len(results) < 1):
             return None
         else:
-            return (results[0]['lat'], results[0]['lng'])
+            return [(c['lat'], c['lng']) for c in results][0]
     else:
         return rescode
 
