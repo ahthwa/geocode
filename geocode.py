@@ -47,7 +47,29 @@ def naver_geocode(addr):
     else:
         return rescode
 
-def naver_geodecode(lat, lng):
+def naver_reverse_geocode(lat, lng):
+    """
+    >>> naver_reverse_geocode(37.5602997, 126.9829401)
+    '서울특별시 중구 퇴계로 100 스테이트타워 남산'
+    """
+    url = "https://openapi.naver.com/v1/map/reversegeocode?query=%f,%f" %(lng,lat)
+    response = _request(url, {"X-Naver-Client-Id":naver_client_id, "X-Naver-Client-Secret":naver_client_secret})
+    rescode = response.getcode()
+
+    addr = []
+    if (rescode == 200):
+        response_body = response.read().decode('utf-8')
+        json_body = json.loads(response_body)
+        for i in json_body['result']['items']:
+            if i['isRoadAddress'] == True:
+                addr.append(i['address'])
+        if (len(addr) < 1):
+            return None
+        else:
+            return addr[0]
+    else:
+        return rescode
+
     return
 
 def naver_geo_search(query):

@@ -1,42 +1,57 @@
 # Geocode Package
 
-주소, 검색어에 해당하는 지리 좌표를 구하는 python package
+주소, 검색어에 해당하는 지리 좌표를 구하는 python package  
+naver 지도 API, 검색 API, google map API wrapper
 
 ## API
 
-### geocode
+### naver\_geocode
 
-주소에 해당하는 좌표를 얻는 함수
-
+naver 지도 API를 통해 주소에 대한 위도 경도 좌표를 구한다.
 
 ```python
     >>> import geocode
-    >>> geocode.geocode("서울특별시 중구 퇴계로 100")
-    {u'lat': 37.5602013, u'lng': 126.9829327}
+    >>> geocode.naver_geocode("서울특별시 중구 퇴계로 100")
+    (37.5602997, 126.9829401)
 ```
 
-### search
+### naver\_reverse\_geocode
 
-네이버 지역 검색 첫번째 결과의 좌표를 얻는 함수
+naver 지도 API를 통해 위도, 경도 좌표에 대한 주소를 구한다.
 
 ```python
     >>> import geocode
-    >>> geocode.search("스타벅스 남산스테이트점", API_KEY)
-    {u'lat': 37.560468, u'lng': 126.983027}
+    >>> goecode.naver_reverse_geocode(37.5602997, 126.9829401)
+    '서울특별시 중구 퇴계로 100 스테이트타워 남산'
+```
+
+### naver\_geo\_search
+
+naver 검색 API를 통해 지역 검색 첫번째 결과의 위도, 경도 좌표를 구한다.
+
+```python
+    >>> import geocode
+    >>> geocode.naver_geo_search("스타벅스 남산스테이트점", API_KEY)
+    (37.5602997, 126.9829401)
+```
+
+### google\_geocode
+
+google map API를 통해 주소에 대한 위도 경도 좌표를 구한다.
+
+```python
+    >>> import geocode
+    >>> geocode.google_geocode("서울특별시 중구 퇴계로 100")
+    (37.5602013, 126.9829327)
 ```
 
 ## Reference
 
 네이버 API, 구글 API의 위치 정확도가 주소에 따라 달라서 네이버 API를 default로, 네이버 API의 결과가 없는 경우 구글 API를 사용함
 
-* [네이버 지도 API](http://developer.naver.com/wiki/pages/JavaScript#section-JavaScript-9._EC_A3_BC_EC_86_8C_EC_A2_8C_ED_91_9C_EB_B3_80_ED_99_98)  
-주소에 해당하는 위경도 좌표를 구함
+* [네이버 지도 API](https://developers.naver.com/docs/map/overview)
+* [네이버 검색 API - 지역](https://developers.naver.com/docs/search/local)
 * [Google Maps Geocoding API](https://developers.google.com/maps/documentation/geocoding/intro)  
-도로명주소, 지번주소에 해당하는 위경도 좌표를 구함 
-* [네이버 검색 API](http://developer.naver.com/wiki/pages/SrchLocal)  
-상호, 점포명에 해당하는 네이버 지도검색 결과를 카텍 좌표계로 구함 
-* [다음 로컬 API - 좌표계변환](http://developers.daum.net/services/apis/local/geo/transcoord)  
-카텍 좌표계를 위/경도 좌표계로 변환 
 * RgoogleMap
 ```
 > library(RgoogleMaps)
